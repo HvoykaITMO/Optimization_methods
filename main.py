@@ -16,9 +16,12 @@ y = np.arange(-5, 5, 0.01)
 X, Y = np.meshgrid(x, y, indexing='ij')
 
 x0 = np.array([4, 4])
+
 # x_opt, history = GD_constant(grad_f, x0=x0, alpha=0.01)
-x_opt, history = GD_adaptive_Lipschitz(f, grad_f, x0=x0, L0=3, gamma=1.5, rho=0.9)
+# x_opt, history = GD_adaptive_Lipschitz(f, grad_f, x0=x0, L0=3, gamma=1.5, rho=0.9)
 # x_opt, history = GD_and_ZeroOpt(f, grad_f, x0=x0)
+x_opt, history = GD_backtracking(f, grad_f, x0=x0, alpha0=1, c1=0.46, rho=0.62)
+
 print(f"Начальная точка: {x0}")
 print(f"Оптимум: {x_opt}")
 print(f"Траектория:\n{history}")
