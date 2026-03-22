@@ -2,7 +2,7 @@ import numpy as np
 from scipy.optimize import minimize_scalar
 
 
-def GD_constant(grad_f, x0, alpha, epsilon=0.001, max_iterations=1000):
+def GD_constant(grad_f, x0, alpha, epsilon=0.001, max_iterations=2000):
     x_current = x0.copy()
     history_solution = [x_current.copy()]
 
@@ -25,7 +25,7 @@ def GD_constant(grad_f, x0, alpha, epsilon=0.001, max_iterations=1000):
     return x_current, np.array(history_solution), np.array(history_grad), np.array(history_grad_norm)
 
 
-def GD_adaptive_Lipschitz(f, grad_f, x0, L0, gamma, rho, epsilon=0.001, max_iterations=1000):
+def GD_adaptive_Lipschitz(f, grad_f, x0, L0, gamma, rho, epsilon=0.001, max_iterations=2000):
 
     assert gamma > 1, "gamma должен быть > 1"
     assert 0 < rho < 1, "rho не в (0, 1)"
@@ -70,7 +70,7 @@ def GD_adaptive_Lipschitz(f, grad_f, x0, L0, gamma, rho, epsilon=0.001, max_iter
     return x_current, np.array(history_solution), np.array(history_grad), np.array(history_grad_norm)
 
 
-def GD_and_ZeroOpt(f, grad_f, x0, epsilon=0.001, max_iterations=1000):
+def GD_and_ZeroOpt(f, grad_f, x0, epsilon=0.001, max_iterations=2000):
     x_current = x0.copy()
     history_solution = [x_current.copy()]
 
@@ -99,9 +99,10 @@ def GD_and_ZeroOpt(f, grad_f, x0, epsilon=0.001, max_iterations=1000):
     return x_current, np.array(history_solution), np.array(history_grad), np.array(history_grad_norm)
 
 
-def GD_backtracking(f, grad_f, x0, alpha0, c1, rho, epsilon=0.001, max_iterations=1000):
+def GD_backtracking(f, grad_f, x0, alpha0, c1, c2, rho, epsilon=0.001, max_iterations=2000):
 
-    assert 0 < c1 < 1, "c1 не в (0, 1)"
+    assert 0 < c2 < 1, "c2 не в (0, 1)"
+    assert 0 < c1 < c2, "c1 не в (0, 1)"
     assert 0 < rho < 1, "rho не в (0, 1)"
 
     x_current = x0.copy()
@@ -116,16 +117,22 @@ def GD_backtracking(f, grad_f, x0, alpha0, c1, rho, epsilon=0.001, max_iteration
         grad_norm = np.linalg.norm(grad)
         history_grad.append(grad.copy())
         history_grad_norm.append(grad_norm)
-        phi0 = f(x_current)
 
         if grad_norm < epsilon:
             break
 
         inner_iter = 0
+        phi0 = f(x_current)
+        grad_dot_d = -grad_norm**2  # dot_product(grad, -grad)
         while True:
-            phi = lambda alpha: f(x_current + alpha * (- grad))
+            x_new = x_current - alpha_current * grad
+            phi_new = f(x_new)  # phi(a) = f(x_k + a*d)
+            grad_new = grad_f(x_new)
 
-            if phi(alpha_current) <= phi0 + c1 * alpha_current * (- grad_norm**2):
+            armijo = phi_new <= phi0 + c1 * alpha_current * grad_dot_d  # Armijo cond. (grad_dot_d = -grad_norm**2)
+            wolfe = abs(grad_new.dot(-grad)) <= c2 * abs(grad_dot_d)  # Strong Wolfe cond.
+
+            if armijo and wolfe:
                 break
 
             alpha_current *= rho
@@ -133,8 +140,6 @@ def GD_backtracking(f, grad_f, x0, alpha0, c1, rho, epsilon=0.001, max_iteration
             inner_iter += 1
             if inner_iter > 100:
                 raise RuntimeError(f"Не удалось подобрать alpha на итерации {i}")
-
-        x_new = x_current - alpha_current * grad
 
         x_current = x_new.copy()
         history_solution.append(x_current.copy())
