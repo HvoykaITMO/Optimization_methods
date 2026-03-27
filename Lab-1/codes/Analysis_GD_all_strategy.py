@@ -1,4 +1,4 @@
-from utils.Graphs import make_convergence_comparison_graph, make_GD_graph
+from utils.Graphs import make_convergence_comparison_graph
 from utils.GD_variations import *
 
 
